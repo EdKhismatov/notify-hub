@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConsumerController } from './consumer.controller';
-import { ConsumerService } from './consumer.service';
+import { EventsModule } from './events/events.module';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
-  imports: [],
-  controllers: [ConsumerController],
-  providers: [ConsumerService],
+  imports: [EventsModule, RabbitmqModule],
+  controllers: [],
+  providers: [],
 })
 export class ConsumerModule {}
