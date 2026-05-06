@@ -1,9 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
-import { Telegraf } from 'telegraf';
-import { EXCHANGES, QUEUES, IEventHandler } from '@app/shared';
 import type { IEvent } from '@app/shared';
+import { EXCHANGES, IEventHandler, QUEUES } from '@app/shared';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
+import { Telegraf } from 'telegraf';
 
 @Injectable()
 export class TelegramService implements OnModuleInit, IEventHandler {
@@ -53,6 +53,7 @@ export class TelegramService implements OnModuleInit, IEventHandler {
     try {
       const message = this.formatMessage(event);
       await this.bot.telegram.sendMessage(this.chatId, message, {
+        // eslint-disable-next-line camelcase
         parse_mode: 'HTML',
       });
       this.logger.log(`Notification sent for event [${event.id}]`);
