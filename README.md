@@ -1,98 +1,100 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Notify Hub 🚀
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+**Notify Hub** — это масштабируемая микросервисная архитектура, построенная на базе **NestJS**, **RabbitMQ** и **Telegram Bot API**. Проект демонстрирует надежную асинхронную обработку событий, паттерны проектирования микросервисов и лучшие практики построения распределенных систем.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🏗 Архитектура
 
-## Description
+Проект реализован в виде **NestJS Монорепозитория** и состоит из одной общей библиотеки и трёх независимых микросервисов:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- 📦 **Shared Library (`@app/shared`)** — единый источник правды. Содержит DTO, интерфейсы и константы (названия очередей, обменников, ключи маршрутизации).
+- 🌐 **Producer Service (`apps/producer`)** — HTTP REST API шлюз. Принимает входящие запросы (`POST /events`), валидирует их и публикует в RabbitMQ (Exchange: `events_exchange`).
+- ⚙️ **Consumer Service (`apps/consumer`)** — обработчик бизнес-логики. Слушает очередь `events_queue`. Реализует паттерны идемпотентности, ручное подтверждение сообщений (ACK/NACK) и механизм `Dead Letter Queue` (DLQ) для обработки сбоев.
+- 📱 **Telegram Notifier Service (`apps/telegram-notifier`)** — сервис уведомлений. Слушает очередь `notifications_queue` (через Fan-Out маршрутизацию) и отправляет отформатированные HTML-сообщения пользователю в Telegram.
 
-## Project setup
+### Технологический стек:
+* **Backend:** TypeScript, NestJS, class-validator
+* **Message Broker:** RabbitMQ (`@golevelup/nestjs-rabbitmq`, `amqplib`)
+* **Telegram:** `telegraf`
+* **Infrastructure:** Docker, Docker Compose
+* **API Docs:** Swagger UI
+* **CI/CD:** GitHub Actions (Lint, Build)
+
+## ✨ Ключевые особенности (О чем стоит знать)
+
+* **Fan-Out паттерн:** Событие из `Producer` отправляется в один `Exchange`, откуда копируется в две независимые очереди (`events_queue` и `notifications_queue`). Падение одного сервиса не аффектит другой.
+* **Идемпотентность:** `Consumer` отслеживает UUID обработанных событий в памяти (Set) во избежание дублирования операций.
+* **Dead Letter Queue (DLQ):** Если `Consumer` не может успешно обработать событие 3 раза (благодаря `x-retry-count`), сообщение не блокирует очередь, а отправляется в `dead_letter_queue` для последующего ручного разбора.
+* **Graceful Degradation:** Telegram Notifier не падает, если токен не предоставлен, а лишь пишет предупреждение в лог.
+
+## 🚀 Как запустить проект
+
+### 1. Переменные окружения
+Создайте файл `.env` в корне проекта (или скопируйте из `.env.example`) и заполните настройки Telegram:
+
+```env
+TELEGRAM_BOT_TOKEN=7123456789:AAH...твои-буквы-и-цифры
+TELEGRAM_CHAT_ID=123456789
+```
+> **Внимание:** Перед началом использования обязательно отправьте своему боту команду `/start` в Telegram, иначе он не сможет вам написать. Узнать свой `TELEGRAM_CHAT_ID` можно через бота `@userinfobot`.
+
+### 2. Запуск через Docker (Рекомендуется)
+Убедитесь, что у вас установлен Docker и Docker Compose.
 
 ```bash
-$ npm install
+docker-compose up --build -d
+```
+Эта команда поднимет брокер RabbitMQ и все три микросервиса.
+
+### 3. Запуск локально (для разработки)
+```bash
+# Поднять только RabbitMQ
+docker-compose up rabbitmq -d
+
+# Установить зависимости
+npm install
+
+# В разных окнах терминала запустить микросервисы:
+npm run start:dev producer
+npm run start:dev consumer
+npm run start:dev telegram-notifier
 ```
 
-## Compile and run the project
+## 📖 Использование API
+
+Документация **Swagger** доступна по адресу:  
+🔗 **http://localhost:3001/api**
+
+Вы можете протестировать систему, отправив HTTP POST запрос через Swagger или cURL:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+curl -X 'POST' \
+  'http://localhost:3001/events' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "type": "payment.created",
+  "payload": {
+    "amount": 100,
+    "currency": "USD"
+  }
+}'
 ```
 
-## Run tests
+После отправки вы должны увидеть:
+1. Статус `201 Created` в ответе HTTP.
+2. Логи успешной обработки в консоли `Consumer`.
+3. Новое уведомление в вашем приложении Telegram от бота.
+
+## 🛠 Запуск проверок (Линтер и сборка)
+
+В проекте настроен строгий статический анализ:
 
 ```bash
-# unit tests
-$ npm run test
+# Запуск ESLint
+npm run lint
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# Сборка каждого микросервиса
+npm run build producer
+npm run build consumer
+npm run build telegram-notifier
 ```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
