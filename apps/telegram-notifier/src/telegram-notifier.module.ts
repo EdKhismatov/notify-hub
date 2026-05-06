@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TelegramNotifierController } from './telegram-notifier.controller';
-import { TelegramNotifierService } from './telegram-notifier.service';
+import { TelegramModule } from './telegram/telegram.module';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
-  imports: [],
-  controllers: [TelegramNotifierController],
-  providers: [TelegramNotifierService],
+  imports: [TelegramModule, RabbitmqModule],
+  controllers: [],
+  providers: [],
 })
 export class TelegramNotifierModule {}
