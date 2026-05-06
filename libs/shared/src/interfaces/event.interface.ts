@@ -6,5 +6,5 @@ export interface IEvent {
 }
 
 export interface IEventHandler {
-  handle(event: IEvent): Promise<void>;
+  handle(event: IEvent, ...args: any[]): Promise<any>;
 }
