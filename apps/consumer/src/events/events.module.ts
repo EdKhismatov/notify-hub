@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { EventsService } from './events.service';
 import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
+import { EventsService } from './events.service';
 
 @Module({
   imports: [RabbitmqModule],

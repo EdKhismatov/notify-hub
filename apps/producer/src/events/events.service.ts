@@ -1,8 +1,8 @@
-import { EventDto, EXCHANGES, IEvent, ROUTING_KEYS } from '@app/shared';
-import { CreateEventDto } from './dto/create-event.dto';
+import { EXCHANGES, IEvent, ROUTING_KEYS } from '@app/shared';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { CreateEventDto } from './dto/create-event.dto';
 
 @Injectable()
 export class EventsService {

@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
-import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { EXCHANGES, QUEUES } from '@app/shared';
+import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { Module } from '@nestjs/common';
 
 @Module({
   imports: [
