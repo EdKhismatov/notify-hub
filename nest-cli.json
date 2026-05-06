@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/notify-hub/src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true,
+    "tsConfigPath": "apps/notify-hub/tsconfig.app.json"
+  },
+  "monorepo": true,
+  "root": "apps/notify-hub",
+  "projects": {
+    "consumer": {
+      "type": "application",
+      "root": "apps/consumer",
+      "entryFile": "main",
+      "sourceRoot": "apps/consumer/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/consumer/tsconfig.app.json"
+      }
+    },
+    "notify-hub": {
+      "type": "application",
+      "root": "apps/notify-hub",
+      "entryFile": "main",
+      "sourceRoot": "apps/notify-hub/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/notify-hub/tsconfig.app.json"
+      }
+    },
+    "producer": {
+      "type": "application",
+      "root": "apps/producer",
+      "entryFile": "main",
+      "sourceRoot": "apps/producer/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/producer/tsconfig.app.json"
+      }
+    },
+    "shared": {
+      "type": "library",
+      "root": "libs/shared",
+      "entryFile": "index",
+      "sourceRoot": "libs/shared/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/shared/tsconfig.lib.json"
+      }
+    },
+    "telegram-notifier": {
+      "type": "application",
+      "root": "apps/telegram-notifier",
+      "entryFile": "main",
+      "sourceRoot": "apps/telegram-notifier/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/telegram-notifier/tsconfig.app.json"
+      }
+    }
+  }
+}
