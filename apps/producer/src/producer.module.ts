@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ProducerController } from './producer.controller';
-import { ProducerService } from './producer.service';
+import { EventsModule } from './events/events.module';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
-  imports: [],
-  controllers: [ProducerController],
-  providers: [ProducerService],
+  imports: [EventsModule, RabbitmqModule],
+  controllers: [],
+  providers: [],
 })
 export class ProducerModule {}
