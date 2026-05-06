@@ -1,0 +1,76 @@
+version: '3.9'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: notify-hub-rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - notify-network
+
+  producer:
+    build:
+      context: .
+      dockerfile: apps/producer/Dockerfile
+    container_name: notify-hub-producer
+    ports:
+      - '${PRODUCER_PORT:-3001}:3001'
+    env_file:
+      - .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - notify-network
+    restart: unless-stopped
+
+  consumer:
+    build:
+      context: .
+      dockerfile: apps/consumer/Dockerfile
+    container_name: notify-hub-consumer
+    ports:
+      - '${CONSUMER_PORT:-3002}:3002'
+    env_file:
+      - .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - notify-network
+    restart: unless-stopped
+
+  telegram-notifier:
+    build:
+      context: .
+      dockerfile: apps/telegram-notifier/Dockerfile
+    container_name: notify-hub-telegram-notifier
+    ports:
+      - '${NOTIFIER_PORT:-3003}:3003'
+    env_file:
+      - .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - notify-network
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
+
+networks:
+  notify-network:
+    driver: bridge
