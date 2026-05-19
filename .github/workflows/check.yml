@@ -10,7 +10,7 @@ on:
 name: Project check
 jobs:
   check:
-    name: Check
+    name: Lint, build and test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,9 +20,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Lint code
+        run: npm run lint
 
       - name: Build projects
         run: |
@@ -30,5 +34,55 @@ jobs:
           npx nest build consumer
           npx nest build telegram-notifier
 
-      - name: Lint code
-        run: npm run lint
+      - name: Run unit tests
+        run: npm test -- --ci --runInBand
+
+  e2e:
+    name: E2E tests (with infrastructure)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: notify
+          POSTGRES_PASSWORD: notify
+          POSTGRES_DB: notify_hub_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U notify -d notify_hub_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      RUN_E2E: 'true'
+      RABBITMQ_URL: amqp://guest:guest@localhost:5672
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
+      POSTGRES_USER: notify
+      POSTGRES_PASSWORD: notify
+      POSTGRES_DB: notify_hub_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run e2e
+        run: npm run test:e2e
