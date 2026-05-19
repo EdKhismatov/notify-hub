@@ -65,3 +65,4 @@ docker/data/
 .env
 !.env.example
 .plan.md
+.claude
